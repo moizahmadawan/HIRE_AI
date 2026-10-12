@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth'
 import { auth, google } from './firebase'
 
-export default function Login() {
+export default function Login({ onDemo }: { onDemo: () => void }) {
   const [mode, setMode] = useState<'in' | 'up'>('in')
   const [email, setEmail] = useState('')
   const [pass, setPass] = useState('')
@@ -31,6 +31,7 @@ export default function Login() {
         {err && <p className="error" role="alert">{err}</p>}
         <button className="btn-pri" type="submit">{mode === 'in' ? 'Sign in' : 'Create account'}</button>
         <button className="btn-out" type="button" onClick={() => go(() => signInWithPopup(auth, google))}>Continue with Google</button>
+        <button className="btn-out" type="button" onClick={onDemo}>Try demo mode</button>
         <button className="link" type="button" onClick={() => setMode(mode === 'in' ? 'up' : 'in')}>
           {mode === 'in' ? 'New here? Create an account' : 'Have an account? Sign in'}
         </button>
