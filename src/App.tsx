@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { onAuthStateChanged, type User } from 'firebase/auth'
+import { onAuthStateChanged } from 'firebase/auth'
 import { auth } from './firebase'
-import { useCol } from './data'
+import { useCol, DEMO_UID, type AppUser } from './data'
 import Login from './Login'
 import Candidates from './Candidates'
 import { Analytics, Calendar, Dashboard, Inbox, Interviews, Jobs, Settings } from './Pages'
@@ -9,7 +9,7 @@ import './App.css'
 
 const NAV = ['Dashboard', 'Jobs', 'Candidates', 'Calendar', 'Interviews', 'Analytics', 'Inbox', 'Settings']
 
-function Shell({ user }: { user: User }) {
+function Shell({ user, onExit }: { user: AppUser; onExit: () => void }) {
   const [page, setPage] = useState('Dashboard')
   const cands = useCol(user.uid, 'candidates')
   const jobs = useCol(user.uid, 'jobs')
@@ -32,7 +32,8 @@ function Shell({ user }: { user: User }) {
             </button>
           ))}
         </nav>
-        <div className="me"><span className="av">{name[0].toUpperCase()}</span><div><b>{name}</b><small>Recruiter</small></div></div>
+        {user.uid === DEMO_UID && <p className="demo-tag">Demo mode: sample data, nothing is saved.</p>}
+        <div className="me"><span className="av">{name[0].toUpperCase()}</span><div><b>{name}</b><small>{user.uid === DEMO_UID ? 'Demo mode' : 'Recruiter'}</small></div></div>
       </aside>
       <main className="main">
         {page === 'Dashboard' && <Dashboard cands={cands} jobs={jobs} ivs={ivs} />}
@@ -44,15 +45,17 @@ function Shell({ user }: { user: User }) {
         {page === 'Interviews' && <Interviews ivs={ivs} cands={cands} jobs={jobs} notify={notify} />}
         {page === 'Analytics' && <Analytics cands={cands} jobs={jobs} ivs={ivs} />}
         {page === 'Inbox' && <Inbox msgs={msgs} />}
-        {page === 'Settings' && <Settings user={user} />}
+        {page === 'Settings' && <Settings user={user} onExit={onExit} />}
       </main>
     </div>
   )
 }
 
 export default function App() {
-  const [user, setUser] = useState<User | null | undefined>(undefined)
+  const [user, setUser] = useState<AppUser | null | undefined>(undefined)
+  const [demo, setDemo] = useState(false)
   useEffect(() => onAuthStateChanged(auth, setUser), [])
+  if (demo) return <Shell user={{ uid: DEMO_UID, displayName: 'Demo Recruiter', email: 'demo@hireai.app' }} onExit={() => setDemo(false)} />
   if (user === undefined) return <p className="loading">Loading...</p>
-  return user ? <Shell user={user} /> : <Login />
+  return user ? <Shell user={user} onExit={() => {}} /> : <Login onDemo={() => setDemo(true)} />
 }
