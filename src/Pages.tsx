@@ -1,7 +1,7 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
-import { sendPasswordResetEmail, updateProfile, signOut, type User } from 'firebase/auth'
+import { sendPasswordResetEmail, updateProfile, signOut } from 'firebase/auth'
 import { auth } from './firebase'
-import type { Col } from './data'
+import { DEMO_UID, type AppUser, type Col } from './data'
 
 const fmt = (v: unknown) => new Date(String(v)).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })
 const STATUSES = ['Scheduled', 'Done', 'Cancelled']
@@ -217,7 +217,8 @@ export function Inbox({ msgs }: { msgs: Col }) {
   )
 }
 
-export function Settings({ user }: { user: User }) {
+export function Settings({ user, onExit }: { user: AppUser; onExit: () => void }) {
+  const demo = user.uid === DEMO_UID
   const [name, setName] = useState(user.displayName ?? '')
   const [msg, setMsg] = useState('')
   const run = async (fn: () => Promise<unknown>, ok: string) => {
@@ -228,9 +229,11 @@ export function Settings({ user }: { user: User }) {
       <section className="card form one">
         <Field label="Email"><input value={user.email ?? ''} disabled /></Field>
         <Field label="Display name"><input value={name} onChange={(e) => setName(e.target.value)} /></Field>
-        <button className="btn-pri" onClick={() => run(() => updateProfile(user, { displayName: name }), 'Name saved.')}>Save name</button>
-        <button className="btn-out" onClick={() => user.email && run(() => sendPasswordResetEmail(auth, user.email!), 'Password reset email sent.')}>Send password reset email</button>
-        <button className="btn-out" onClick={() => signOut(auth)}>Sign out</button>
+        {demo ? <p className="muted">Account changes are disabled in demo mode.</p> : <>
+          <button className="btn-pri" onClick={() => run(() => updateProfile(auth.currentUser!, { displayName: name }), 'Name saved.')}>Save name</button>
+          <button className="btn-out" onClick={() => user.email && run(() => sendPasswordResetEmail(auth, user.email!), 'Password reset email sent.')}>Send password reset email</button>
+        </>}
+        <button className="btn-out" onClick={() => (demo ? onExit() : signOut(auth))}>{demo ? 'Exit demo' : 'Sign out'}</button>
         {msg && <p className="muted" role="status">{msg}</p>}
       </section>
     </Page>
